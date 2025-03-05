@@ -15,6 +15,7 @@ interface PendingUser {
 
 export default function ApproveUsers() {
     const [pendingUsers, setPendingUsers] = useState<PendingUser[]>([]);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         fetchPendingUsers();
@@ -22,17 +23,30 @@ export default function ApproveUsers() {
 
     const fetchPendingUsers = async () => {
         try {
+            setLoading(true);
             const response = await admin.getPendingUsers();
-            setPendingUsers(response.data);
+            console.log("pending users", response);
+
+            if (response && Array.isArray(response.data)) {
+                setPendingUsers(response.data);
+            } else if (Array.isArray(response)) {
+                setPendingUsers(response);
+            } else {
+                setPendingUsers([]);
+            }
         } catch (error) {
+            console.error("Error fetching pending users:", error);
             toast.error('Failed to fetch pending users');
+            setPendingUsers([]);
+        } finally {
+            setLoading(false);
         }
     };
 
-    const handleApprove = async (userId: number) => {
+    const handleApprove = async (userId: number, userName: string) => {
         try {
             await admin.approveUser(userId);
-            toast.success('User approved successfully');
+            toast.success(`${userName} has been approved successfully!`);
             fetchPendingUsers();
         } catch (error) {
             toast.error('Failed to approve user');
@@ -65,32 +79,49 @@ export default function ApproveUsers() {
                                         </tr>
                                     </thead>
                                     <tbody className="bg-white divide-y divide-gray-200">
-                                        {pendingUsers.map((user) => (
-                                            <tr key={user.id}>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {user.name}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
-                                                    {user.email}
-                                                </td>
-                                                <td className="px-6 py-4 whitespace-nowrap text-sm">
-                                                    <button
-                                                        onClick={() => handleApprove(user.id)}
-                                                        className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold hover:bg-green-200"
-                                                    >
-                                                        Approve
-                                                    </button>
+                                        {loading ? (
+                                            // Loading skeleton
+                                            Array.from({ length: 3 }).map((_, index) => (
+                                                <tr key={`skeleton-${index}`}>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="h-4 bg-gray-200 rounded w-3/4 animate-pulse"></div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="h-4 bg-gray-200 rounded animate-pulse"></div>
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap">
+                                                        <div className="h-8 bg-gray-200 rounded-full w-20 animate-pulse"></div>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : Array.isArray(pendingUsers) && pendingUsers.length > 0 ? (
+                                            pendingUsers.map((user) => (
+                                                <tr key={user.id}>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                        {user.name}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">
+                                                        {user.email}
+                                                    </td>
+                                                    <td className="px-6 py-4 whitespace-nowrap text-sm">
+                                                        <button
+                                                            onClick={() => handleApprove(user.id, user.name)}
+                                                            className="bg-green-100 text-green-800 px-3 py-1 rounded-full text-sm font-semibold hover:bg-green-200"
+                                                        >
+                                                            Approve
+                                                        </button>
+                                                    </td>
+                                                </tr>
+                                            ))
+                                        ) : (
+                                            <tr>
+                                                <td colSpan={3} className="px-6 py-4 text-center text-gray-500">
+                                                    No pending approvals
                                                 </td>
                                             </tr>
-                                        ))}
+                                        )}
                                     </tbody>
                                 </table>
-
-                                {pendingUsers.length === 0 && (
-                                    <p className="text-center py-4 text-gray-500">
-                                        No pending approvals
-                                    </p>
-                                )}
                             </div>
                         </div>
                     </div>

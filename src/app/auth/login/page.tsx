@@ -38,10 +38,7 @@ export default function Login() {
             const decodedToken: any = jwtDecode(data.token);
 
             if (decodedToken.role === 'ADMIN') {
-                router.push('/admin/dashboard');
-            } else {
-                router.push('/dashboard');
-            }
+                router.push('/dashboard');}
 
             toast.success('Login successful!');
         } catch (error: any) {
