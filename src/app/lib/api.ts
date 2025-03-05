@@ -1,7 +1,7 @@
 // Base API setup
 import axios from 'axios';
 
-const API_URL = 'http://localhost:8085/api';
+const API_URL = 'https://steady-valery-megan123-feff4840.koyeb.app/api';
 
 // Create axios instance
 const api = axios.create({
